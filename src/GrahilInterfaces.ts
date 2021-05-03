@@ -90,3 +90,31 @@ interface DataNotificationObject {
     data: object,
     timestamp:number
 }
+
+
+interface IRPC{
+    requestid:string,
+    type:string,
+    intent:string
+    params?:any
+    timestamp?:number
+}
+
+
+interface SocketServiceObject {
+
+}
+
+
+interface IServiceSocket {
+    host:string,
+    port:number
+    authtoken:string,
+    autoconnect?:boolean
+    queryparams?:string
+}
+
+
+interface GrahilServiceClient {
+    
+}
