@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Api bridge for grahil service",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
@@ -28,6 +29,8 @@
     "typescript": "^3.9.9"
   },
   "dependencies": {
+    "axios": "^0.21.1",
+    "tsify": "^5.0.2",
     "websocket": "^1.0.34"
   }
 }

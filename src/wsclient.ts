@@ -1,9 +1,10 @@
 // Service provider core
 const WebSocketClient = require('websocket').client; // https://www.npmjs.com/package/websocket
+import { IServiceSocket, ISocketServiceObject } from "./grahil_interfaces";
 
 
 
-class WSlient implements IServiceSocket {
+export class WSClient implements IServiceSocket {
 
     host: string;
     port: number;
@@ -18,7 +19,7 @@ class WSlient implements IServiceSocket {
     private _connection:any
 
     
-    constructor (config:IServiceSocket) {
+    constructor (config:ISocketServiceObject) {
 
         this._connected = false
         
@@ -78,7 +79,17 @@ class WSlient implements IServiceSocket {
      } 
 
 
-    private connect():void{
+    public getHost():string{
+        return this.host;
+    }
+
+
+    public getPort():number{
+        return this.port;
+    }
+
+
+    public connect():void{
         if (!this._connected || this._client.Closed){
             this._client.connect(this._wsEndPoint);
         }else{
@@ -87,7 +98,7 @@ class WSlient implements IServiceSocket {
     }
 
 
-    private disconnect():void{
+    public disconnect():void{
         if (this._connected){
             this._client.close()
         }else{
@@ -96,7 +107,7 @@ class WSlient implements IServiceSocket {
     }
 
 
-    private is_connected():boolean{
+    public is_connected():boolean{
         if(this._connection == undefined){
             return false;
         }else{
@@ -105,7 +116,7 @@ class WSlient implements IServiceSocket {
     }
 
 
-    private doRPC():void{
+    public doRPC():void{
         if (this._connection != undefined && this._connection.connected) {
             this._connection.sendUTF("hello");
         }else{

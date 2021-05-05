@@ -1,6 +1,6 @@
 // interfaces
 
-interface OSStats {
+export interface OSStats {
     arch: string;
     name: string;
     type: string;
@@ -13,7 +13,7 @@ interface OSStats {
 }
 
 
-interface CPUStats {
+export interface CPUStats {
     frequency: string;
     count: number;
     vendor: string;
@@ -22,7 +22,7 @@ interface CPUStats {
 }
 
 
-interface MemoryStats {
+export interface MemoryStats {
     total: number;
     used: number;
     free: number;
@@ -33,7 +33,7 @@ interface MemoryStats {
 }
 
 
-interface DiskStats {
+export interface DiskStats {
     mountpoint: string,
     total: string,
     used: string,
@@ -42,7 +42,7 @@ interface DiskStats {
 }
 
 
-interface NetworkStats {
+export interface NetworkStats {
     id: string,
     bytes_sent: number,
     bytes_recv: number,
@@ -55,7 +55,7 @@ interface NetworkStats {
 }
 
 
-interface SystemStats {
+export interface SystemStats {
     os: OSStats,
     cpu: CPUStats,
     memory: MemoryStats,
@@ -65,26 +65,26 @@ interface SystemStats {
 }
 
 
-interface LogData {
+export interface LogData {
     log_key: string,
     log_data: string,
     timestamp:number
 }
 
 
-interface SimpleNotificationObject {
+export interface SimpleNotificationObject {
     message: string,
     type:number
     timestamp:number
 }
 
-interface SimpleDataNotificationObject {
+export interface SimpleDataNotificationObject {
     data: object,
     timestamp:number
 }
 
 
-interface DataNotificationObject {
+export interface DataNotificationObject {
     message: string,
     type:number,
     data: object,
@@ -92,7 +92,7 @@ interface DataNotificationObject {
 }
 
 
-interface IRPC{
+export interface IRPC{
     requestid:string,
     type:string,
     intent:string
@@ -101,20 +101,39 @@ interface IRPC{
 }
 
 
-interface SocketServiceObject {
+export interface ISocketServiceObject {
 
-}
-
-
-interface IServiceSocket {
     host:string,
     port:number
     authtoken:string,
     autoconnect?:boolean
-    queryparams?:string
+    queryparams?:string,
+    
 }
 
 
-interface GrahilServiceClient {
+export interface IServiceSocket {
+    host:string,
+    port:number
+    authtoken:string,
+    autoconnect?:boolean
+    queryparams?:string,
+
+    getHost: ()=>string,
+    getPort: ()=>number,
+    connect: ()=>void,
+    disconnect: ()=>void,
+    is_connected: ()=>boolean,
+    doRPC: ()=>void
+}
+
+
+export interface IClientData {
+    host:string,
+    port:number
+}
+
+
+export interface IServiceClient {
     
 }
