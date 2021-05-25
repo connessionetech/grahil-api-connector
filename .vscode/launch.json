@@ -12,10 +12,17 @@
             },
         },
         {
-            "type": "pwa-node",
-            "name": "Run Current File",
+            "type": "node",
             "request": "launch",
-            "program": "${workspaceFolder}/src/index.ts"
+            "name": "Debug Program",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/src/index.ts",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "sourceMaps": true,
+            "console": "integratedTerminal",
+            "outFiles": ["${workspaceFolder}/lib/**/*.js"]
         }
     ]
 }

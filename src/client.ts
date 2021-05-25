@@ -1,8 +1,11 @@
 // Core api client
 
 const axios = require('axios');
-import { IServiceClient, IServiceSocket, IClientData } from "./grahil_interfaces";
+import { IServiceClient, IServiceSocket, IClientConfig } from "./grahil_interfaces";
 import { WSClient} from "./wsclient";
+
+require('better-logging')(console);
+import { sha256, sha224 } from 'js-sha256';
 
 
 
@@ -14,21 +17,33 @@ export class GrahilApiClient implements IServiceClient{
     private _socketservice!: IServiceSocket;
     private _restEndPoint:string;
     private _authtoken!: string;
+    private _authtime!: number;
 
 
-    constructor (config:IClientData) {        
+    constructor (config:IClientConfig) {        
         this.host = config.host
         this.port = config.port
         this._restEndPoint = "http" + "://" + this.host + ":" + this.port
-        console.log("ready")
     }
 
 
 
-
-    public connectToService(username:string, password:string){
+    public connect(username:string, password:string){
         console.log("connecting to service")
-        this.authenticate(username, password)
+        
+        var hashed_password = sha256.create().update(password).hex();
+        this.authenticate(username, hashed_password).then((res) => {
+            if(res.status == 200){
+                this._authtoken = res.data.data;
+                this._authtime = new Date().getUTCMilliseconds()
+            }else{
+                console.log(res)
+            }
+            return JSON.parse(res);
+        }).catch((err) => {
+            console.log(err);
+        })
+        
     }
 
 
@@ -53,34 +68,33 @@ export class GrahilApiClient implements IServiceClient{
 
 
 
-    private authenticate(username:string, password:string):void{
+    private authenticate(username:string, password:string):Promise<any>{
 
-        const url = this.getBaseAPIendPoint() + "/" + "authorize"
+        return new Promise((resolve,reject) => {
 
-        const params = new URLSearchParams()
-        params.append('username', username)
-        params.append('password', password)
+            const url = this.getBaseAPIendPoint() + "/" + "authorize"
 
-        const config = {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        }
-
-        const promise = axios.post(url, params, config)
-
-        console.log(promise)
-
-        promise.then((result:any) => {
-            this._authtoken = result as string
-            console.error(this._authtoken)
-        })
-        .catch((err:any) => {
-            // Do somthing
-            console.error(err.toString())
-        })        
-
-    }
+            const params = new URLSearchParams()
+            params.append('username', username)
+            params.append('password', password)
     
+            const config = {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    
+            const promise = axios.post(url, params, config)
+    
+            promise.then((result:any) => {
+                console.debug(result)
+                resolve(result)                
+            })
+            .catch((err:any) => {
+                console.error(err.toString())
+                reject(err)
+            })    
+        });
+    }    
 
 }

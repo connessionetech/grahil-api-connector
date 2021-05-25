@@ -1,14 +1,16 @@
 {
   "name": "grahil-api-connector",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Api bridge for grahil service",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
-    "lint": "tslint -p tsconfig.json"
+    "lint": "tslint -p tsconfig.json",
+    "tsc": "tsc",
+    "prod": "tsc && node ./lib/index.js",
+    "debug": "tsc --sourcemap"
   },
   "repository": {
     "type": "git",
@@ -24,12 +26,16 @@
   "devDependencies": {
     "@types/node": "^7.0.71",
     "prettier": "^2.2.1",
+    "ts-node": "^10.0.0",
+    "tsconfig-paths": "^3.9.0",
     "tslint": "^6.1.3",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.9.9"
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "better-logging": "^4.5.0",
+    "js-sha256": "^0.9.0",
     "tsify": "^5.0.2",
     "websocket": "^1.0.34"
   }

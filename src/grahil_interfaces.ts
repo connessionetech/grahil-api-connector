@@ -128,9 +128,12 @@ export interface IServiceSocket {
 }
 
 
-export interface IClientData {
+
+export interface IClientConfig {
     host:string,
     port:number
+    username?:string,
+    password?:string
 }
 
 
