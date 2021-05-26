@@ -1,6 +1,5 @@
 // custom event constants
 
-// notification data
 export const NOTIFICATION_EVENT = "NotificationReceived";
 export const DATA_NOTIFICATION_EVENT = "DataNotificationReceived";
 export const DATA_EVENT = "DataReceived";

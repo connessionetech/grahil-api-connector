@@ -6,7 +6,7 @@ import { WSClient} from "./wsclient";
 
 require('better-logging')(console);
 import { sha256, sha224 } from 'js-sha256';
-
+import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher } from "strongly-typed-events";
 
 
 export class GrahilApiClient implements IServiceClient{
@@ -20,6 +20,13 @@ export class GrahilApiClient implements IServiceClient{
     private _authtime!: number;
 
 
+
+    /* Events */
+    private _onNotification = new SignalDispatcher(); // for simple text notification
+    private _onDataNotification = new SimpleEventDispatcher<any>(); // for text notification with data
+    private _onData = new SimpleEventDispatcher<any>(); // for data only
+
+
     constructor (config:IClientConfig) {        
         this.host = config.host
         this.port = config.port
@@ -28,21 +35,41 @@ export class GrahilApiClient implements IServiceClient{
 
 
 
-    public connect(username:string, password:string){
+    public connect(username:string, password:string):Promise<any>{
         console.log("connecting to service")
-        
-        var hashed_password = sha256.create().update(password).hex();
-        this.authenticate(username, hashed_password).then((res) => {
-            if(res.status == 200){
-                this._authtoken = res.data.data;
-                this._authtime = new Date().getUTCMilliseconds()
-            }else{
-                console.log(res)
-            }
-            return JSON.parse(res);
-        }).catch((err) => {
-            console.log(err);
-        })
+
+        return new Promise((resolve,reject) => {
+
+            var hashed_password = sha256.create().update(password).hex();
+            this.authenticate(username, hashed_password).then((res) => {
+                if(res.status == 200){
+                    this._authtoken = res.data.data;
+                    this._authtime = new Date().getUTCMilliseconds()
+
+                    // Connect to websocket
+                    new WSClient({
+                        host: this.host,
+                        port: this.port,
+                        authtoken: this._authtoken
+                    }).connect().then((client)=> {
+                        this._socketservice = client
+                        this._socketservice.onChannelData.subscribe(data => console.log("Data: " + JSON.stringify(data)));
+                        this._socketservice.onChannelState.subscribe(state => console.log("State: ${state}"));
+                        resolve(null)
+                    }).catch((err)=> {
+                        console.error(err);
+                        reject(err)
+                    })
+
+                }else{
+                    console.log(res)
+                    // handle unexpected condition
+                }
+            }).catch((err) => {
+                console.log(err);
+                // handle error
+            })
+        });           
         
     }
 

@@ -1,10 +1,12 @@
 // Service provider core
 const WebSocketClient = require('websocket').client; // https://www.npmjs.com/package/websocket
 import { IServiceSocket, ISocketServiceObject } from "./grahil_interfaces";
+import { ChannelEventProvider} from "./event/eventprovider"
+import * as CHANNEL_STATES from './event/channelstates';
 
 
 
-export class WSClient implements IServiceSocket {
+export class WSClient extends ChannelEventProvider implements IServiceSocket {
 
     host: string;
     port: number;
@@ -17,61 +19,28 @@ export class WSClient implements IServiceSocket {
 
     private _client:typeof WebSocketClient;
     private _connection:any
+    private _disconnectFlag:boolean
 
     
+
     constructor (config:ISocketServiceObject) {
 
+        super()
+
         this._connected = false
+        this._disconnectFlag = false
+        this._client = undefined
         
         this.host = config.host
         this.port = config.port
         this.authtoken = config.authtoken
         this.autoconnect = config.autoconnect?(config.autoconnect != undefined):Boolean(config.autoconnect)
-        this._wsEndPoint = "ws" + "://" + this.host + ":" + this.port + "?" + "token=" + this.authtoken;
-        this._initClient()
-    }
-
-
-
-    private _initClient():void{
-
-        this._connection = undefined
-        this._client = new WebSocketClient();
-
-        // connect
+        this._wsEndPoint = "ws" + "://" + this.host + ":" + this.port + "/" + "ws?" + "token=" + this.authtoken;
+        
         if(this.autoconnect == true){
             this.connect()
         }
-        
-        this._client.on('connectFailed', (error:any) => {
-            this._connected = false
-            console.log('Connect Error: ' + error.toString());
-        });
-        
-
-        this._client.on('connect', (connection:any) => {
-            this._connected = true
-            this._connection = connection
-
-            console.log('WebSocket Client Connected');
-
-            connection.on('error', (error:any) => {
-                this._connected = false
-                console.log("Connection Error: " + error.toString());
-            });
-
-            connection.on('close', () => {
-                this._connected = false
-                console.log('echo-protocol Connection Closed');
-            });
-
-            connection.on('message', (message:any) => {
-                if (message.type === 'utf8') {
-                    console.log("Received: '" + message.utf8Data + "'");
-                }
-            });
-        });
-    }    
+    }
     
 
     private getSocketEndPoint():string { 
@@ -89,17 +58,79 @@ export class WSClient implements IServiceSocket {
     }
 
 
-    public connect():void{
-        if (!this._connected || this._client.Closed){
-            this._client.connect(this._wsEndPoint);
-        }else{
-            console.error("socket is already connected");
-        }
+    public connect():Promise<any>{
+
+        return new Promise((resolve,reject) => {
+
+            if(this._client == undefined)
+            {
+
+                this._connection = undefined
+                this._client = new WebSocketClient();
+
+                
+                this._client.on('connectFailed', (error:any) => {
+                    this._connected = false
+                    console.log('Connect Error: ' + error.toString()); 
+                    this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_ERROR);                   
+                    reject(error)
+                });
+                
+
+                this._client.on('connect', (connection:any) => {
+
+                    console.info('WebSocket Client Connected');
+                    this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_CONNECTED);
+
+                    this._connected = true
+                    this._connection = connection
+
+                    connection.on('error', (error:any) => {
+                        this._connected = false
+                        console.error("Connection Error: " + error.toString());
+                        this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_ERROR);
+                    });
+
+                    connection.on('close', () => {
+                        this._connected = false
+                        console.debug('protocol Connection Closed');
+                        if(this._disconnectFlag){
+                            this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_DISCONNECTED);
+                        }else{
+                            this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_CONNECTION_LOST);
+                        }
+                    });                    
+
+                    connection.on('message', (message:any) => {
+                        if (message.type === 'utf8') {
+                            console.debug("Received: '" + message.utf8Data + "'");
+                        }
+                        this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_DATA);
+                        this._onChannelData.dispatch(message) // raw data
+                    });
+
+                    resolve(this)
+                });
+            }
+
+
+            if (!this._connected || this._client.Closed){
+                this._client.connect(this._wsEndPoint);
+            }else{
+                console.error("socket is already connected");
+            }
+        });        
     }
 
 
     public disconnect():void{
         if (this._connected){
+            // use flag to see if disconnect was requested or automatic
+            this._disconnectFlag = true
+            setTimeout(() => {
+                this._disconnectFlag = false
+            }, 5000);
+
             this._client.close()
         }else{
             console.error("socket is not connected");

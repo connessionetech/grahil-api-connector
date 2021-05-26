@@ -10,4 +10,8 @@ const client = new GrahilApiClient({
     port: 8000
 })
 
-client.connect("administrator", "xyz123")
+client.connect("administrator", "xyz123").then(()=>{
+    console.log("Connected")
+}).catch((err)=>{
+    console.error("Could not connect")
+})

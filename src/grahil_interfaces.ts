@@ -1,3 +1,6 @@
+import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
+
+
 // interfaces
 
 export interface OSStats {
@@ -111,8 +114,15 @@ export interface ISocketServiceObject {
     
 }
 
+export interface IServiceChannel{
+    _onChannelData:SimpleEventDispatcher<any>,
+    _onChannelState:SimpleEventDispatcher<any>,
+    onChannelData:ISimpleEvent<any>,    
+    onChannelState:ISimpleEvent<any>
+}
 
-export interface IServiceSocket {
+
+export interface IServiceSocket extends IServiceChannel {
     host:string,
     port:number
     authtoken:string,
@@ -121,7 +131,7 @@ export interface IServiceSocket {
 
     getHost: ()=>string,
     getPort: ()=>number,
-    connect: ()=>void,
+    connect: ()=>Promise<any>,
     disconnect: ()=>void,
     is_connected: ()=>boolean,
     doRPC: ()=>void
@@ -138,5 +148,6 @@ export interface IClientConfig {
 
 
 export interface IServiceClient {
+    
     
 }
