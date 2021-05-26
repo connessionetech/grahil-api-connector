@@ -6,10 +6,11 @@ import { WSClient} from "./wsclient";
 
 require('better-logging')(console);
 import { sha256, sha224 } from 'js-sha256';
-import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher } from "strongly-typed-events";
+import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
+import { ClientEventProvider } from "./event/eventprovider";
 
 
-export class GrahilApiClient implements IServiceClient{
+export class GrahilApiClient extends ClientEventProvider implements IServiceClient{
 
     host: string;
     port: number;
@@ -21,13 +22,11 @@ export class GrahilApiClient implements IServiceClient{
 
 
 
-    /* Events */
-    private _onNotification = new SignalDispatcher(); // for simple text notification
-    private _onDataNotification = new SimpleEventDispatcher<any>(); // for text notification with data
-    private _onData = new SimpleEventDispatcher<any>(); // for data only
 
-
-    constructor (config:IClientConfig) {        
+    constructor (config:IClientConfig) {      
+        
+        super()
+        
         this.host = config.host
         this.port = config.port
         this._restEndPoint = "http" + "://" + this.host + ":" + this.port
@@ -53,8 +52,12 @@ export class GrahilApiClient implements IServiceClient{
                         authtoken: this._authtoken
                     }).connect().then((client)=> {
                         this._socketservice = client
-                        this._socketservice.onChannelData.subscribe(data => console.log("Data: " + JSON.stringify(data)));
-                        this._socketservice.onChannelState.subscribe(state => console.log("State: ${state}"));
+                        this._socketservice.onChannelData.subscribe((data) => {
+                            console.log("Data: " + JSON.stringify(data))
+                        });
+                        this._socketservice.onChannelState.subscribe((state) => {
+                            console.log("State:" + state)
+                        });
                         resolve(null)
                     }).catch((err)=> {
                         console.error(err);

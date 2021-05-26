@@ -114,9 +114,21 @@ export interface ISocketServiceObject {
     
 }
 
+
+export interface IClientChannel {
+    onClientSimpleNotification:ISimpleEvent<any>,    
+    onClientDataNotification:ISimpleEvent<any>,
+    onClientData:ISimpleEvent<any>,
+    onClientState:ISimpleEvent<any>
+}
+
+
+export interface IServiceClient extends IClientChannel {
+    
+}
+
+
 export interface IServiceChannel{
-    _onChannelData:SimpleEventDispatcher<any>,
-    _onChannelState:SimpleEventDispatcher<any>,
     onChannelData:ISimpleEvent<any>,    
     onChannelState:ISimpleEvent<any>
 }
@@ -146,8 +158,3 @@ export interface IClientConfig {
     password?:string
 }
 
-
-export interface IServiceClient {
-    
-    
-}
