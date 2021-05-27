@@ -126,7 +126,7 @@ export interface IClientChannel {
 export interface IServiceClient extends IClientChannel {
     connect: (username:string, password:string)=>Promise<any>
     getlogs: ()=>Promise<Array<string>>,
-    read_file: ()=>Promise<string>,
+    read_file: (path:string)=>Promise<string>,
     write_file: (path:string, content:any)=>Promise<void>,
     subscribe_log: (logkey:string)=>Promise<string>,
     unsubscribe_log: (logkey:string)=>Promise<any>,
@@ -156,7 +156,7 @@ export interface IServiceSocket extends IServiceChannel {
     connect: ()=>Promise<any>,
     disconnect: ()=>void,
     is_connected: ()=>boolean,
-    doRPC: ()=>void
+    doRPC: (methodName:string, params:object)=>void
 }
 
 

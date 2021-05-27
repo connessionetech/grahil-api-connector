@@ -39,9 +39,30 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      * 
      * @returns 
      */
-    public read_file():Promise<string>
+    public read_file(path:string):Promise<string>
     {
         const promise:Promise<any> = new Promise((resolve,reject) => {
+
+            const url = this.getBaseAPIendPoint() + "/file/read"
+
+            const params = new URLSearchParams()
+            params.append('path', path)
+    
+            const config = {
+                headers: {
+                }
+            }
+    
+            const promise = axios.get(url, params, config)
+    
+            promise.then((result:any) => {
+                console.debug(result)
+                resolve(result)                
+            })
+            .catch((err:any) => {
+                console.error(err.toString())
+                reject(err)
+            })    
 
         });
 
@@ -54,9 +75,32 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      * 
      * @returns 
      */
-    public write_file():Promise<void>
+    public write_file(path:string, content:string):Promise<void>
     {
         const promise:Promise<any> = new Promise((resolve,reject) => {
+
+            const url = this.getBaseAPIendPoint() + "/file/write"
+
+            const params = new URLSearchParams()
+            params.append('path', path)
+            params.append('content', content)
+    
+            const config = {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    
+            const promise = axios.post(url, params, config)
+    
+            promise.then((result:any) => {
+                console.debug(result)
+                resolve(result)                
+            })
+            .catch((err:any) => {
+                console.error(err.toString())
+                reject(err)
+            })    
 
         });
 
@@ -122,6 +166,28 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     public download_log(logkey: string):Promise<string>
     {
         const promise:Promise<any> = new Promise((resolve,reject) => {
+
+            const url = this.getBaseAPIendPoint() + "/log/download"
+
+            const params = new URLSearchParams()
+            params.append('logname', logkey)
+    
+            const config = {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    
+            const promise = axios.post(url, params, config)
+    
+            promise.then((result:any) => {
+                console.debug(result)
+                resolve(result)                
+            })
+            .catch((err:any) => {
+                console.error(err.toString())
+                reject(err)
+            })    
 
         });
 
