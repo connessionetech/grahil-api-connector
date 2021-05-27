@@ -124,7 +124,17 @@ export interface IClientChannel {
 
 
 export interface IServiceClient extends IClientChannel {
-    
+    connect: (username:string, password:string)=>Promise<any>
+    getlogs: ()=>Promise<Array<string>>,
+    read_file: ()=>Promise<string>,
+    write_file: (path:string, content:any)=>Promise<void>,
+    subscribe_log: (logkey:string)=>Promise<string>,
+    unsubscribe_log: (logkey:string)=>Promise<any>,
+    download_log: (logkey:string)=>Promise<string>,
+    get_system_services: ()=>Promise<Array<string>>,
+    start_service: (name:string)=>Promise<any>,
+    stop_service: (name:string)=>Promise<any>,
+    restart_service: (name:string)=>Promise<any>
 }
 
 

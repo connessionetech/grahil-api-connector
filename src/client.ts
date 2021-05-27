@@ -34,6 +34,169 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
 
 
+    /**
+     * Fetched the content of a simple text file from server
+     * 
+     * @returns 
+     */
+    public read_file():Promise<string>
+    {
+        const promise:Promise<any> = new Promise((resolve,reject) => {
+
+        });
+
+        return promise
+    }
+
+
+    /**
+     * Saves the content of a simple text file on server
+     * 
+     * @returns 
+     */
+    public write_file():Promise<void>
+    {
+        const promise:Promise<any> = new Promise((resolve,reject) => {
+
+        });
+
+        return promise
+    }
+
+
+
+    /**
+     * Gets list of accessible logs
+     * 
+     * @returns Promise that resolved to List of logs
+     */
+    public getlogs():Promise<Array<string>>
+    {
+        const promise:Promise<any> = new Promise((resolve,reject) => {
+
+        });
+
+        return promise
+    }
+    
+
+    /**
+     * Subscribes to log channel (topic path) to get realtime data
+     * 
+     * @param logkey 
+     * @returns Promise that resolved to subscribable topic path for the data channel of thsi log
+     */
+    public subscribe_log(logkey: string):Promise<string>
+    {
+        const promise:Promise<any> = new Promise((resolve,reject) => {
+
+        });
+
+        return promise
+    }
+
+
+    /**
+     * 
+     * Unsubscribes from a log channel
+     * 
+     * @param logkey 
+     * @returns 
+     */
+    public unsubscribe_log(logkey: string):Promise<void>
+    {
+        const promise:Promise<any> = new Promise((resolve,reject) => {
+
+        });
+
+        return promise
+    }
+
+
+    /**
+     * Requests to download a log file from server
+     * 
+     * @param logkey 
+     * @returns 
+     */
+    public download_log(logkey: string):Promise<string>
+    {
+        const promise:Promise<any> = new Promise((resolve,reject) => {
+
+        });
+
+        return promise
+    }
+
+
+
+
+    /**
+     * Gets list of system services that can be started/stopped through the service
+     * 
+     * @returns 
+     */
+    public get_system_services():Promise<string[]>
+    {
+        const promise:Promise<any> = new Promise((resolve,reject) => {
+
+        });
+
+        return promise
+    }
+
+
+
+    /**
+     * Starts a system service using its name
+     * 
+     * @param name 
+     * @returns 
+     */
+    public start_service(name: string):Promise<void>
+    {
+        return new Promise((resolve,reject) => {
+
+        });
+    }
+
+
+    /**
+     * Stops a system service using its name
+     * 
+     * @param name 
+     * @returns 
+     */
+    public stop_service(name: string):Promise<void>
+    {
+        return new Promise((resolve,reject) => {
+
+        });
+    }
+
+
+    /**
+     * Restarts a system service using its name
+     * 
+     * @param name 
+     * @returns 
+     */
+    public restart_service(name: string):Promise<void>
+    {
+        return new Promise((resolve,reject) => {
+
+        });
+    }
+
+
+
+    /**
+     * Connects to backend service using a set of valid credentials
+     * 
+     * @param username 
+     * @param password 
+     * @returns 
+     */
     public connect(username:string, password:string):Promise<any>{
         console.log("connecting to service")
 
