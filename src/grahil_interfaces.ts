@@ -156,7 +156,7 @@ export interface IServiceSocket extends IServiceChannel {
     connect: ()=>Promise<any>,
     disconnect: ()=>void,
     is_connected: ()=>boolean,
-    doRPC: (methodName:string, params:object)=>void
+    doRPC: (methodName:string, params?:object)=>Promise<any>
 }
 
 

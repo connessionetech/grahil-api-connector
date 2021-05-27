@@ -35,7 +35,10 @@
   "dependencies": {
     "axios": "^0.21.1",
     "better-logging": "^4.5.0",
+    "defer-promise": "^2.0.1",
     "js-sha256": "^0.9.0",
+    "nanoid": "^3.1.23",
+    "strongly-typed-events": "^2.1.7",
     "tsify": "^5.0.2",
     "websocket": "^1.0.34"
   }

@@ -1,8 +1,13 @@
 // Service provider core
 const WebSocketClient = require('websocket').client; // https://www.npmjs.com/package/websocket
+const Defer = require('defer-promise')
+import { nanoid } from 'nanoid'
 import { IServiceSocket, ISocketServiceObject } from "./grahil_interfaces";
 import { ChannelEventProvider} from "./event/eventprovider"
-import * as CHANNEL_STATES from './event/channelstates';
+import * as CHANNEL_STATES from './event/channelstates'
+
+
+
 
 
 
@@ -21,6 +26,8 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
     private _connection:any
     private _disconnectFlag:boolean
 
+    private _requests:Map<string,object>
+
     
 
     constructor (config:ISocketServiceObject) {
@@ -30,6 +37,7 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
         this._connected = false
         this._disconnectFlag = false
         this._client = undefined
+        this._requests = new Map<string,object>()
         
         this.host = config.host
         this.port = config.port
@@ -147,11 +155,47 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
     }
 
 
-    public doRPC():void{
-        if (this._connection != undefined && this._connection.connected) {
-            this._connection.sendUTF("hello");
+    private buildRequest(requestid:string, intent:string, params:object)
+    {
+        return {
+            "requestid": requestid,
+            "method": intent,
+            "type": "rpc",
+            "params": params
+        }
+    }
+
+
+    /**
+     * Makes RPC request to server
+     * `
+     * @param methodName 
+     * @param params 
+     */
+    public doRPC(intent:string, params?:object):Promise<any>{
+
+        if(params == undefined || params == null){
+            params = {}
+        }
+        
+        let requestid = nanoid();
+        let request = this.buildRequest(requestid, intent, params)
+        let deferred = new Defer()
+
+        if (this._connection != undefined && this._connection.connected) {                                
+                
+            try{
+                setTimeout(() => {
+                    this._connection.sendUTF(request);    
+                }, 10);                    
+            }catch(err){
+                console.error("Unable to send request")
+            }
         }else{
             console.log("Socket is not connected")
-        }
+        };
+
+        this._requests.set(requestid, deferred)        
+        return deferred.promise;
     }
 }

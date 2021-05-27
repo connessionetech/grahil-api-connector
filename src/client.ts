@@ -3,11 +3,11 @@
 const axios = require('axios');
 import { IServiceClient, IServiceSocket, IClientConfig } from "./grahil_interfaces";
 import { WSClient} from "./wsclient";
-
-require('better-logging')(console);
 import { sha256, sha224 } from 'js-sha256';
 import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
 import { ClientEventProvider } from "./event/eventprovider";
+
+require('better-logging')(console);
 
 
 export class GrahilApiClient extends ClientEventProvider implements IServiceClient{
@@ -116,13 +116,11 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public getlogs():Promise<Array<string>>
     {
-        const promise:Promise<any> = new Promise((resolve,reject) => {
-
-        });
-
+        let promise: Promise<any> = this._socketservice.doRPC("list_logs")
         return promise
     }
     
+
 
     /**
      * Subscribes to log channel (topic path) to get realtime data
@@ -132,10 +130,10 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public subscribe_log(logkey: string):Promise<string>
     {
-        const promise:Promise<any> = new Promise((resolve,reject) => {
-
-        });
-
+        let payload = {
+            "topic": "/logging/"+logkey
+        }
+        let promise: Promise<any> = this._socketservice.doRPC("subscribe_channel", payload)
         return promise
     }
 
@@ -149,10 +147,10 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public unsubscribe_log(logkey: string):Promise<void>
     {
-        const promise:Promise<any> = new Promise((resolve,reject) => {
-
-        });
-
+        let payload = {
+            "topic": "/logging/"+logkey
+        }
+        let promise: Promise<any> = this._socketservice.doRPC("unsubscribe_channel", payload)
         return promise
     }
 
@@ -221,9 +219,11 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public start_service(name: string):Promise<void>
     {
-        return new Promise((resolve,reject) => {
-
-        });
+        let payload = {
+            "module": name
+        }
+        let promise: Promise<any> = this._socketservice.doRPC("start_target", payload)
+        return promise
     }
 
 
@@ -235,9 +235,11 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public stop_service(name: string):Promise<void>
     {
-        return new Promise((resolve,reject) => {
-
-        });
+        let payload = {
+            "module": name
+        }
+        let promise: Promise<any> = this._socketservice.doRPC("stop_target", payload)
+        return promise
     }
 
 
@@ -249,9 +251,12 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public restart_service(name: string):Promise<void>
     {
-        return new Promise((resolve,reject) => {
-
-        });
+        
+        let payload = {
+            "module": name
+        }
+        let promise: Promise<any> = this._socketservice.doRPC("restart_target", payload)
+        return promise
     }
 
 
@@ -281,10 +286,10 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                         authtoken: this._authtoken
                     }).connect().then((client)=> {
                         this._socketservice = client
-                        this._socketservice.onChannelData.subscribe((data) => {
+                        this._socketservice.onChannelData.subscribe((data:any) => {
                             console.log("Data: " + JSON.stringify(data))
                         });
-                        this._socketservice.onChannelState.subscribe((state) => {
+                        this._socketservice.onChannelState.subscribe((state:string) => {
                             console.log("State:" + state)
                         });
                         resolve(null)
