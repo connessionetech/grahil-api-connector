@@ -6,6 +6,8 @@ import { WSClient} from "./wsclient";
 import { sha256, sha224 } from 'js-sha256';
 import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
 import { ClientEventProvider } from "./event/eventprovider";
+import { Base64 } from 'js-base64';
+
 
 require('better-logging')(console);
 
@@ -50,14 +52,24 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     
             const config = {
                 headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
             }
     
-            const promise = axios.get(url, params, config)
+            const promise = axios.post(url, params, config)
     
             promise.then((result:any) => {
-                console.debug(result)
-                resolve(result)                
+
+                if(result.status == 200)
+                {
+                    const content = Base64.decode(result.data.data as string)
+                    console.debug(content)
+                    resolve(content)
+                }
+                else
+                {
+                   throw Error("Invalid or unexpected response")
+                }
             })
             .catch((err:any) => {
                 console.error(err.toString())
@@ -194,7 +206,6 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
 
 
-
     /**
      * Gets list of system services that can be started/stopped through the service
      * 
@@ -202,10 +213,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public get_system_services():Promise<string[]>
     {
-        const promise:Promise<any> = new Promise((resolve,reject) => {
-
-        });
-
+        let promise: Promise<any> = this._socketservice.doRPC("list_targets")
         return promise
     }
 
@@ -292,6 +300,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                         this._socketservice.onChannelState.subscribe((state:string) => {
                             console.log("State:" + state)
                         });
+
                         resolve(null)
                     }).catch((err)=> {
                         console.error(err);

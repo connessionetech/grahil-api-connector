@@ -8,6 +8,16 @@ import * as CHANNEL_STATES from './event/channelstates'
 
 
 
+export class RequestRecord{
+    defer:typeof Defer
+    timestamp:number
+
+    constructor (defer:typeof Defer, timestamp:number) {
+        this.defer = defer
+        this.timestamp = timestamp
+    }
+}
+
 
 
 
@@ -26,7 +36,8 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
     private _connection:any
     private _disconnectFlag:boolean
 
-    private _requests:Map<string,object>
+    private _requests:Map<string,RequestRecord>
+    private _cleanupId:any
 
     
 
@@ -37,13 +48,16 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
         this._connected = false
         this._disconnectFlag = false
         this._client = undefined
-        this._requests = new Map<string,object>()
+        this._requests = new Map<string,RequestRecord>()
         
         this.host = config.host
         this.port = config.port
         this.authtoken = config.authtoken
         this.autoconnect = config.autoconnect?(config.autoconnect != undefined):Boolean(config.autoconnect)
         this._wsEndPoint = "ws" + "://" + this.host + ":" + this.port + "/" + "ws?" + "token=" + this.authtoken;
+
+        /* Auto cleanup */
+        this._cleanupId = setInterval(() => this.cleanup_requests(), 30000);
         
         if(this.autoconnect == true){
             this.connect()
@@ -112,6 +126,20 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
                     connection.on('message', (message:any) => {
                         if (message.type === 'utf8') {
                             console.debug("Received: '" + message.utf8Data + "'");
+
+                            try 
+                            {
+                                let data = JSON.parse(message.utf8Data);
+                                if(data.hasOwnProperty('type') && data["type"] == "rpc")
+                                {
+                                    this.resolve_request(data)
+                                }
+                            } 
+                            catch (e) 
+                            {
+                                console.error("Unexpected message type (not JSON) : " + e.toString())
+                            }
+                            
                         }
                         this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_DATA);
                         this._onChannelData.dispatch(message) // raw data
@@ -159,7 +187,7 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
     {
         return {
             "requestid": requestid,
-            "method": intent,
+            "intent": intent,
             "type": "rpc",
             "params": params
         }
@@ -186,7 +214,7 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
                 
             try{
                 setTimeout(() => {
-                    this._connection.sendUTF(request);    
+                    this._connection.sendUTF(JSON.stringify(request));    
                 }, 10);                    
             }catch(err){
                 console.error("Unable to send request")
@@ -195,7 +223,57 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
             console.log("Socket is not connected")
         };
 
-        this._requests.set(requestid, deferred)        
+        this._requests.set(requestid, new RequestRecord(deferred, new Date().getUTCMilliseconds()))        
         return deferred.promise;
+    }
+
+
+
+
+    private cleanup_requests():void
+    {
+        const now = new Date().getUTCMilliseconds()
+        this._requests.forEach((value,requestid,map)=>{
+            const record:RequestRecord  =  (value as RequestRecord)
+            const request_timestamp = record.timestamp
+            if(now - request_timestamp > 10000)
+            {
+                try
+                {
+                    const defer:typeof Defer =  record.defer
+                    defer.reject("RPC Timed out")
+                }
+                catch(e)
+                {
+                    console.error(e)
+                }
+                finally
+                {
+                    map.delete(requestid)
+                }
+                
+            }
+        });        
+    }
+
+
+
+    private resolve_request(response:any):void
+    {
+
+        let requestid = response["requestid"]
+        let response_timestamp =  response["timestamp"]
+        let def:typeof Defer = this._requests.get(requestid)?.defer
+
+        if(response["status"] == "success")
+        {
+            let data = response["data"]
+            def.resolve(data)
+        }
+        else if(response["status"] == "error")
+        {
+            let error_message = response["message"]
+            def.reject(error_message)        
+        }
     }
 }
