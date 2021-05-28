@@ -95,7 +95,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
             const params = new URLSearchParams()
             params.append('path', path)
-            params.append('content', content)
+            params.append('content', Base64.encode(content))
     
             const config = {
                 headers: {
@@ -106,8 +106,16 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
             const promise = axios.post(url, params, config)
     
             promise.then((result:any) => {
-                console.debug(result)
-                resolve(result)                
+                if(result.status == 200)
+                {
+                    const content = Base64.decode(result.data.data as string)
+                    console.debug(content)
+                    resolve(content)
+                }
+                else
+                {
+                   throw Error("Invalid or unexpected response")
+                }              
             })
             .catch((err:any) => {
                 console.error(err.toString())
@@ -235,6 +243,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     }
 
 
+    
     /**
      * Stops a system service using its name
      * 
