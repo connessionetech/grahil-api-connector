@@ -1,4 +1,5 @@
 import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
+import { LogInfo } from "./models";
 
 
 // interfaces
@@ -125,7 +126,7 @@ export interface IClientChannel {
 
 export interface IServiceClient extends IClientChannel {
     connect: (username:string, password:string)=>Promise<any>
-    getlogs: ()=>Promise<Array<string>>,
+    getlogs: ()=>Promise<Array<LogInfo>>,
     read_file: (path:string)=>Promise<string>,
     write_file: (path:string, content:any)=>Promise<void>,
     subscribe_log: (logkey:string)=>Promise<string>,

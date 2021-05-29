@@ -7,6 +7,9 @@ import { sha256, sha224 } from 'js-sha256';
 import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
 import { ClientEventProvider } from "./event/eventprovider";
 import { Base64 } from 'js-base64';
+import {JsonConvert, OperationMode, ValueCheckingMode} from "json2typescript"
+import { LogInfo } from "./models";
+
 
 
 require('better-logging')(console);
@@ -21,6 +24,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     private _restEndPoint:string;
     private _authtoken!: string;
     private _authtime!: number;
+    private _jsonConvert: JsonConvert;
 
 
 
@@ -32,6 +36,11 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
         this.host = config.host
         this.port = config.port
         this._restEndPoint = "http" + "://" + this.host + ":" + this.port
+
+        this._jsonConvert = new JsonConvert();
+        this._jsonConvert.operationMode = OperationMode.LOGGING; // print some debug data
+        this._jsonConvert.ignorePrimitiveChecks = false; // don't allow assigning number to string etc.
+        this._jsonConvert.valueCheckingMode = ValueCheckingMode.DISALLOW_NULL; // never allow null
     }
 
 
@@ -134,10 +143,18 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      * 
      * @returns Promise that resolved to List of logs
      */
-    public getlogs():Promise<Array<string>>
+    public getlogs():Promise<Array<LogInfo>>
     {
-        let promise: Promise<any> = this._socketservice.doRPC("list_logs")
-        return promise
+        return new Promise((resolve,reject) => {
+
+            let promise: Promise<any> = this._socketservice.doRPC("list_logs")
+            promise.then((data:Array<LogInfo>)=>{
+                resolve(data)
+            }).catch((err)=>{
+                reject(err)
+            });
+
+        });
     }
     
 
@@ -148,13 +165,21 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      * @param logkey 
      * @returns Promise that resolved to subscribable topic path for the data channel of thsi log
      */
-    public subscribe_log(logkey: string):Promise<string>
+    public subscribe_log(logkey: string):Promise<any>
     {
-        let payload = {
-            "topic": "/logging/"+logkey
-        }
-        let promise: Promise<any> = this._socketservice.doRPC("subscribe_channel", payload)
-        return promise
+        return new Promise((resolve,reject) => {
+
+            let payload = {
+                "topic": "/logging/"+logkey
+            }
+            let promise: Promise<any> = this._socketservice.doRPC("subscribe_channel", payload)
+            promise.then((data:any)=>{
+                resolve(data)
+            }).catch((err)=>{
+                reject(err)
+            });
+
+        });
     }
 
 
