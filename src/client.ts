@@ -156,6 +156,30 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
         });
     }
+
+
+
+    /**
+     * Subscribes to stats channel (topic path) to get realtime data
+     * 
+     * @returns Promise that resolved to subscribable topic path for the data channel for stats
+     */
+    public subscribe_stats():Promise<any>
+    {
+        return new Promise((resolve,reject) => {
+
+            let payload = {
+                "topic": "/stats"
+            }
+            let promise: Promise<any> = this._socketservice.doRPC("subscribe_channel", payload)
+            promise.then((data:any)=>{
+                resolve(data)
+            }).catch((err)=>{
+                reject(err)
+            });
+
+        });
+    }
     
 
 
@@ -218,7 +242,8 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     {
         const promise:Promise<any> = new Promise((resolve,reject) => {
 
-            const url = this.getBaseAPIendPoint() + "/log/download"
+            const url = this.getBaseAPIendPoint() + "/log/download/static"
+            
 
             const params = new URLSearchParams()
             params.append('logname', logkey)
@@ -232,8 +257,17 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
             const promise = axios.post(url, params, config)
     
             promise.then((result:any) => {
-                console.debug(result)
-                resolve(result)                
+
+                if(result.data.status == "success")
+                {
+                    const download_url = this.getBaseAPIendPoint() + "/" + result.data.data
+                    resolve(download_url) 
+                }
+                else
+                {
+                    throw new Error('Exception response received ' + JSON.stringify(result));
+                }
+                               
             })
             .catch((err:any) => {
                 console.error(err.toString())

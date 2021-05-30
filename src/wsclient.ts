@@ -260,20 +260,28 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
 
     private resolve_request(response:any):void
     {
-
         let requestid = response["requestid"]
-        let response_timestamp =  response["timestamp"]
-        let def:typeof Defer = this._requests.get(requestid)?.defer
 
-        if(response["status"] == "success")
-        {
-            let data = response["data"]
-            def.resolve(data)
+        try{            
+            let response_timestamp =  response["timestamp"]
+            let def:typeof Defer = this._requests.get(requestid)?.defer
+
+            if(response["status"] == "success")
+            {
+                let data = response["data"]
+                def.resolve(data)
+            }
+            else if(response["status"] == "error")
+            {
+                let error_message = response["message"]
+                def.reject(error_message)        
+            }
         }
-        else if(response["status"] == "error")
-        {
-            let error_message = response["message"]
-            def.reject(error_message)        
+        catch(e){
+            console.error("Error processing request");            
+        }
+        finally{
+            this._requests.delete(requestid)
         }
     }
 }
