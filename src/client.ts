@@ -192,11 +192,19 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public unsubscribe_log(logkey: string):Promise<void>
     {
-        let payload = {
-            "topic": "/logging/"+logkey
-        }
-        let promise: Promise<any> = this._socketservice.doRPC("unsubscribe_channel", payload)
-        return promise
+        return new Promise((resolve,reject) => {
+
+            let payload = {
+                "topic": "/logging/"+logkey
+            }
+            let promise: Promise<any> = this._socketservice.doRPC("unsubscribe_channel", payload)
+            promise.then((data:any)=>{
+                resolve(data)
+            }).catch((err)=>{
+                reject(err)
+            });
+
+        });
     }
 
 
@@ -246,8 +254,15 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public get_system_services():Promise<string[]>
     {
-        let promise: Promise<any> = this._socketservice.doRPC("list_targets")
-        return promise
+        return new Promise((resolve,reject) => {
+            let promise: Promise<any> = this._socketservice.doRPC("list_targets")
+            promise.then((data:any)=>{
+                resolve(data)
+            }).catch((err)=>{
+                reject(err)
+            });
+
+        });
     }
 
 
@@ -260,11 +275,18 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public start_service(name: string):Promise<void>
     {
-        let payload = {
-            "module": name
-        }
-        let promise: Promise<any> = this._socketservice.doRPC("start_target", payload)
-        return promise
+        return new Promise((resolve,reject) => {
+            let payload = {
+                "module": name
+            }
+            let promise: Promise<any> = this._socketservice.doRPC("start_target", payload)
+            promise.then((data:any)=>{
+                resolve(data)
+            }).catch((err)=>{
+                reject(err)
+            });
+
+        });
     }
 
 
@@ -277,11 +299,18 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public stop_service(name: string):Promise<void>
     {
-        let payload = {
-            "module": name
-        }
-        let promise: Promise<any> = this._socketservice.doRPC("stop_target", payload)
-        return promise
+        return new Promise((resolve,reject) => {
+            let payload = {
+                "module": name
+            }
+            let promise: Promise<any> = this._socketservice.doRPC("stop_target", payload)
+            promise.then((data:any)=>{
+                resolve(data)
+            }).catch((err)=>{
+                reject(err)
+            });
+
+        });
     }
 
 
@@ -293,12 +322,18 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      */
     public restart_service(name: string):Promise<void>
     {
-        
-        let payload = {
-            "module": name
-        }
-        let promise: Promise<any> = this._socketservice.doRPC("restart_target", payload)
-        return promise
+        return new Promise((resolve,reject) => {
+            let payload = {
+                "module": name
+            }
+            let promise: Promise<any> = this._socketservice.doRPC("restart_target", payload)
+            promise.then((data:any)=>{
+                resolve(data)
+            }).catch((err)=>{
+                reject(err)
+            });
+
+        });
     }
 
 
