@@ -14,7 +14,7 @@ const client = new GrahilApiClient({
 client.connect("administrator", "xyz123").then(()=>{
     console.log("Connected")
     setTimeout(() => {
-        client.subscribe_log("red5.log").then((data)=>{
+        client.subscribe_stats().then((data)=>{
             console.log("data receoved" + data)
         }).catch((err)=>{
             console.error(err);        

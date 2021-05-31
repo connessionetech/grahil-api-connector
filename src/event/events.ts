@@ -1,5 +1,4 @@
 // custom event constants
-
 export const NOTIFICATION_EVENT = "NotificationReceived";
 export const DATA_NOTIFICATION_EVENT = "DataNotificationReceived";
 export const DATA_EVENT = "DataReceived";
@@ -10,3 +9,17 @@ export const SYSTEM_STATS_RECEIVED_EVENT = "SystemStatsReceived";
 // for log data received
 export const LOG_DATA_RECEIVED_EVENT = "LogDataReceived";
 export const LOG_DATA_ERROR_EVENT = "LogDataError";
+
+
+export class GrahilEvent{
+    name:String
+    topic!:string
+    data:any
+    note!:string
+    timestamp!:number
+
+    constructor(name:String){
+        this.name = name
+    }
+
+}

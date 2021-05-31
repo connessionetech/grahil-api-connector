@@ -106,7 +106,6 @@ export interface IRPC{
 
 
 export interface ISocketServiceObject {
-
     host:string,
     port:number
     authtoken:string,
@@ -117,10 +116,13 @@ export interface ISocketServiceObject {
 
 
 export interface IClientChannel {
-    onClientSimpleNotification:ISimpleEvent<any>,    
-    onClientDataNotification:ISimpleEvent<any>,
-    onClientData:ISimpleEvent<any>,
-    onClientState:ISimpleEvent<any>
+    onTextNotificationEvent:ISimpleEvent<any>;
+    onTextDataNotificationEvent:ISimpleEvent<any>;
+    onArbitraryData:ISimpleEvent<any>;
+    onClientState:ISimpleEvent<any>;
+    onStatsData:ISimpleEvent<any>;
+    onLogData:ISimpleEvent<any>;
+    onServerPing:ISimpleEvent<any>;
 }
 
 

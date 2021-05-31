@@ -9,6 +9,7 @@ import { ClientEventProvider } from "./event/eventprovider";
 import { Base64 } from 'js-base64';
 import {JsonConvert, OperationMode, ValueCheckingMode} from "json2typescript"
 import { LogInfo } from "./models";
+import { GrahilEvent } from "./event/events";
 
 
 
@@ -35,7 +36,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
         
         this.host = config.host
         this.port = config.port
-        this._restEndPoint = "http" + "://" + this.host + ":" + this.port
+        this._restEndPoint = "http" + "://" + this.host + ":" + this.port // fix this later
 
         this._jsonConvert = new JsonConvert();
         this._jsonConvert.operationMode = OperationMode.LOGGING; // print some debug data
@@ -77,7 +78,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                 }
                 else
                 {
-                   throw Error("Invalid or unexpected response")
+                    throw new Error("Invalid or unexpected response")
                 }
             })
             .catch((err:any) => {
@@ -123,7 +124,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                 }
                 else
                 {
-                   throw Error("Invalid or unexpected response")
+                    throw new Error("Invalid or unexpected response")
                 }              
             })
             .catch((err:any) => {
@@ -398,7 +399,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                     }).connect().then((client)=> {
                         this._socketservice = client
                         this._socketservice.onChannelData.subscribe((data:any) => {
-                            console.log("Data: " + JSON.stringify(data))
+                            this.processChannelData(data)
                         });
                         this._socketservice.onChannelState.subscribe((state:string) => {
                             console.log("State:" + state)
@@ -418,8 +419,54 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                 console.log(err);
                 // handle error
             })
-        });           
-        
+        });        
+    }
+
+
+
+    private processChannelData(data:any):void{
+
+        if(data["type"] == "event")
+        {
+            let event:GrahilEvent = data as GrahilEvent   
+            let truedata = null;      
+            
+            console.log(JSON.stringify(event))
+            
+            switch(event.name)
+            {
+                case "stats_generated":
+                    this._onStatsEvent.dispatch(event)
+                    break;
+                
+                case "log_line_generated":
+                    truedata = event.data["log"]
+                    event.data = truedata
+                    this._onLogEvent.dispatch(event)
+                    break;
+                
+                case "ping_generated":
+                    this._onServerPing.dispatch(event)
+                    break;
+                
+                case "text_notification":
+                    this._onTextNotificationEvent.dispatch(event)
+                    break;
+                
+                case "text_data_notification":
+                    this._onTextDataNotificationEvent.dispatch(event)
+                    break;
+                
+                case "data_generated":
+                    this._ontDataEvent.dispatch(event)
+                    break;
+
+                default:
+                    console.debug("Unrecognized event")
+                    break
+            }
+        }
+
     }
 
 
@@ -433,7 +480,6 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     private _initSocketClient(token:string){
 
         this._socketservice = new WSClient({
-
             host: this.host,
             port: this.port,
             authtoken:token,

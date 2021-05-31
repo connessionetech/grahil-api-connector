@@ -1,5 +1,5 @@
 import { IClientChannel, IServiceChannel} from "../grahil_interfaces";
-import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher } from "strongly-typed-events";
+import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
 
 
 export class ChannelEventProvider implements IServiceChannel {
@@ -29,10 +29,13 @@ export class ChannelEventProvider implements IServiceChannel {
 export class ClientEventProvider implements IClientChannel {
 
     /* Events */
-    _onClientSimpleNotification = new SimpleEventDispatcher(); // for simple text notification
-    _onClientDataNotification = new SimpleEventDispatcher<any>(); // for text notification with data
-    _onClientData = new SimpleEventDispatcher<any>(); // for data only
-    _onClientState = new SimpleEventDispatcher<any>(); // for state only
+    _onTextNotificationEvent = new SimpleEventDispatcher<any>();
+    _onTextDataNotificationEvent = new SimpleEventDispatcher<any>();
+    _ontDataEvent = new SimpleEventDispatcher<any>();
+    _onClientStateChangeEvent = new SimpleEventDispatcher<any>();
+    _onStatsEvent = new SimpleEventDispatcher<any>();
+    _onLogEvent = new SimpleEventDispatcher<any>();
+    _onServerPing = new SimpleEventDispatcher<any>();
 
 
     constructor () {
@@ -40,20 +43,32 @@ export class ClientEventProvider implements IClientChannel {
     }
 
 
-    public get onClientSimpleNotification() {
-        return this._onClientSimpleNotification.asEvent();
+    public get onTextNotificationEvent() {
+        return this._onTextNotificationEvent.asEvent();
     }
     
-    public get onClientDataNotification() {
-        return this._onClientDataNotification.asEvent();
+    public get onTextDataNotificationEvent() {
+        return this._onTextDataNotificationEvent.asEvent();
     }
 
-    public get onClientData() {
-        return this._onClientData.asEvent();
+    public get onArbitraryData() {
+        return this._ontDataEvent.asEvent();
     }
 
-    public get onClientState() {
-        return this._onClientState.asEvent();
+    public get onStatsData() {
+        return this._onStatsEvent.asEvent();
+    }
+
+    public get onLogData() {
+        return this._onLogEvent.asEvent();
+    }
+
+    public get onClientState(){
+        return this._onClientStateChangeEvent.asEvent()
+    }
+
+    public get onServerPing(){
+        return this._onServerPing.asEvent()
     }
 
 }

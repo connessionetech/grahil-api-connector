@@ -134,15 +134,19 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
                                 {
                                     this.resolve_request(data)
                                 }
+                                else
+                                {
+                                    this._onChannelData.dispatch(data)
+                                    this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_DATA);
+                                }                               
+                                
                             } 
                             catch (e) 
                             {
                                 console.error("Unexpected message type (not JSON) : " + e.toString())
-                            }
-                            
+                            }                            
                         }
-                        this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_DATA);
-                        this._onChannelData.dispatch(message) // raw data
+                        
                     });
 
                     resolve(this)
