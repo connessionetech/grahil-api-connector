@@ -33,8 +33,6 @@ export class ClientEventProvider implements IClientChannel {
     _onTextDataNotificationEvent = new SimpleEventDispatcher<any>();
     _ontDataEvent = new SimpleEventDispatcher<any>();
     _onClientStateChangeEvent = new SimpleEventDispatcher<any>();
-    _onStatsEvent = new SimpleEventDispatcher<any>();
-    _onLogEvent = new SimpleEventDispatcher<any>();
     _onServerPing = new SimpleEventDispatcher<any>();
 
 
@@ -53,14 +51,6 @@ export class ClientEventProvider implements IClientChannel {
 
     public get onArbitraryData() {
         return this._ontDataEvent.asEvent();
-    }
-
-    public get onStatsData() {
-        return this._onStatsEvent.asEvent();
-    }
-
-    public get onLogData() {
-        return this._onLogEvent.asEvent();
     }
 
     public get onClientState(){

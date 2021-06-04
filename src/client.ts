@@ -8,7 +8,7 @@ import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent 
 import { ClientEventProvider } from "./event/eventprovider";
 import { Base64 } from 'js-base64';
 import {JsonConvert, OperationMode, ValueCheckingMode} from "json2typescript"
-import { LogInfo } from "./models";
+import { LogData, LogInfo } from "./models";
 import { GrahilEvent } from "./event/events";
 
 
@@ -396,7 +396,9 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                         host: this.host,
                         port: this.port,
                         authtoken: this._authtoken
-                    }).connect().then((client)=> {
+                    })
+                    .connect()
+                    .then((client)=> {
                         this._socketservice = client
                         this._socketservice.onChannelData.subscribe((data:any) => {
                             this.processChannelData(data)
@@ -406,7 +408,8 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                         });
 
                         resolve(null)
-                    }).catch((err)=> {
+                    })
+                    .catch((err)=> {
                         console.error(err);
                         reject(err)
                     })
@@ -431,20 +434,11 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
             let event:GrahilEvent = data as GrahilEvent   
             let truedata = null;      
             
-            console.log(JSON.stringify(event))
+            console.log(JSON.stringify(event))    
             
             switch(event.name)
             {
-                case "stats_generated":
-                    this._onStatsEvent.dispatch(event)
-                    break;
-                
-                case "log_line_generated":
-                    truedata = event.data["log"]
-                    event.data = truedata
-                    this._onLogEvent.dispatch(event)
-                    break;
-                
+
                 case "ping_generated":
                     this._onServerPing.dispatch(event)
                     break;

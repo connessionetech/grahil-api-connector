@@ -120,8 +120,6 @@ export interface IClientChannel {
     onTextDataNotificationEvent:ISimpleEvent<any>;
     onArbitraryData:ISimpleEvent<any>;
     onClientState:ISimpleEvent<any>;
-    onStatsData:ISimpleEvent<any>;
-    onLogData:ISimpleEvent<any>;
     onServerPing:ISimpleEvent<any>;
 }
 

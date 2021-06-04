@@ -13,3 +13,15 @@ export class LogInfo{
         this.topic = topic
     }
 }
+
+
+export class LogData{
+    name?: string;
+
+    log?: string;
+
+    constructor(name:string, topic:string){
+        this.name = name
+        this.log = topic
+    }
+}
