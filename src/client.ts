@@ -8,9 +8,9 @@ import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent 
 import { ClientEventProvider } from "./event/eventprovider";
 import { Base64 } from 'js-base64';
 import {JsonConvert, OperationMode, ValueCheckingMode} from "json2typescript"
-import { LogData, LogInfo } from "./models";
-import { GrahilEvent } from "./event/events";
-
+import { ClientStateType, ClientState, LogData, LogInfo } from "./models";
+import { GrahilEvent} from "./event/events";
+import * as CHANNEL_STATES from './event/channelstates'
 
 
 require('better-logging')(console);
@@ -400,14 +400,32 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                     .connect()
                     .then((client)=> {
                         this._socketservice = client
+                        this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.CONNECTED))
                         this._socketservice.onChannelData.subscribe((data:any) => {
                             this.processChannelData(data)
                         });
                         this._socketservice.onChannelState.subscribe((state:string) => {
-                            console.log("State:" + state)
+                            switch(state)
+                            {
+                                case CHANNEL_STATES.STATE_CHANNEL_ERROR:
+                                this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.ERROR)) 
+                                break;
+
+                                case CHANNEL_STATES.STATE_CHANNEL_DISCONNECTED:
+                                this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.CONNECTION_TERMINATED)) 
+                                break;
+
+                                case CHANNEL_STATES.STATE_CHANNEL_CONNECTION_LOST:
+                                this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.CONNECTION_LOST)) 
+                                break;
+
+                                case CHANNEL_STATES.STATE_CHANNEL_CONNECTIING:
+                                this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.CONNECTING)) 
+                                break;
+                            }
                         });
 
-                        resolve(null)
+                        resolve(this)
                     })
                     .catch((err)=> {
                         console.error(err);
@@ -433,6 +451,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
         {
             let event:GrahilEvent = data as GrahilEvent   
             let truedata = null;      
+            this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.EVENT_RECEIVED))
             
             console.log(JSON.stringify(event))    
             
@@ -440,7 +459,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
             {
 
                 case "ping_generated":
-                    this._onServerPing.dispatch(event)
+                    this._onServerPingEvent.dispatch(event)
                     break;
                 
                 case "text_notification":
@@ -452,7 +471,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                     break;
                 
                 case "data_generated":
-                    this._ontDataEvent.dispatch(event)
+                    this._onDataEvent.dispatch(event)
                     break;
 
                 default:

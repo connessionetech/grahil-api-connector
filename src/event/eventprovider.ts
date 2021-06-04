@@ -31,9 +31,9 @@ export class ClientEventProvider implements IClientChannel {
     /* Events */
     _onTextNotificationEvent = new SimpleEventDispatcher<any>();
     _onTextDataNotificationEvent = new SimpleEventDispatcher<any>();
-    _ontDataEvent = new SimpleEventDispatcher<any>();
-    _onClientStateChangeEvent = new SimpleEventDispatcher<any>();
-    _onServerPing = new SimpleEventDispatcher<any>();
+    _onDataEvent = new SimpleEventDispatcher<any>();
+    _onClientStateUpdate = new SimpleEventDispatcher<any>();
+    _onServerPingEvent = new SimpleEventDispatcher<any>();
 
 
     constructor () {
@@ -41,24 +41,24 @@ export class ClientEventProvider implements IClientChannel {
     }
 
 
-    public get onTextNotificationEvent() {
+    public get onTextNotification() {
         return this._onTextNotificationEvent.asEvent();
     }
     
-    public get onTextDataNotificationEvent() {
+    public get onTextDataNotification() {
         return this._onTextDataNotificationEvent.asEvent();
     }
 
-    public get onArbitraryData() {
-        return this._ontDataEvent.asEvent();
+    public get onServerData() {
+        return this._onDataEvent.asEvent();
     }
 
-    public get onClientState(){
-        return this._onClientStateChangeEvent.asEvent()
+    public get onClientStateUpdate(){
+        return this._onClientStateUpdate.asEvent()
     }
 
     public get onServerPing(){
-        return this._onServerPing.asEvent()
+        return this._onServerPingEvent.asEvent()
     }
 
 }

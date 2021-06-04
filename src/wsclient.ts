@@ -155,6 +155,7 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
 
 
             if (!this._connected || this._client.Closed){
+                this._onChannelState.dispatch(CHANNEL_STATES.STATE_CHANNEL_CONNECTIING);
                 this._client.connect(this._wsEndPoint);
             }else{
                 console.error("socket is already connected");

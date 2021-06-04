@@ -1,5 +1,5 @@
 import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
-import { LogInfo } from "./models";
+import { ClientState, LogInfo } from "./models";
 
 
 // interfaces
@@ -116,10 +116,10 @@ export interface ISocketServiceObject {
 
 
 export interface IClientChannel {
-    onTextNotificationEvent:ISimpleEvent<any>;
-    onTextDataNotificationEvent:ISimpleEvent<any>;
-    onArbitraryData:ISimpleEvent<any>;
-    onClientState:ISimpleEvent<any>;
+    onTextNotification:ISimpleEvent<any>;
+    onTextDataNotification:ISimpleEvent<any>;
+    onServerData:ISimpleEvent<any>;
+    onClientStateUpdate:ISimpleEvent<ClientState>;
     onServerPing:ISimpleEvent<any>;
 }
 
