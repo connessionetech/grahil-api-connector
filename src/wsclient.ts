@@ -24,8 +24,7 @@ export class RequestRecord{
 export class WSClient extends ChannelEventProvider implements IServiceSocket {
 
     host: string;
-    port: number;
-    autoconnect?: boolean | undefined;    
+    port: number;  
     authtoken: string;
     queryparams?: string | undefined;
 
@@ -53,15 +52,10 @@ export class WSClient extends ChannelEventProvider implements IServiceSocket {
         this.host = config.host
         this.port = config.port
         this.authtoken = config.authtoken
-        this.autoconnect = config.autoconnect?(config.autoconnect != undefined):Boolean(config.autoconnect)
         this._wsEndPoint = "ws" + "://" + this.host + ":" + this.port + "/" + "ws?" + "token=" + this.authtoken;
 
         /* Auto cleanup */
         this._cleanupId = setInterval(() => this.cleanup_requests(), 30000);
-        
-        if(this.autoconnect == true){
-            this.connect()
-        }
     }
     
 

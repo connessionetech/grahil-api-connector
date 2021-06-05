@@ -8,7 +8,7 @@ import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent 
 import { ClientEventProvider } from "./event/eventprovider";
 import { Base64 } from 'js-base64';
 import {JsonConvert, OperationMode, ValueCheckingMode} from "json2typescript"
-import { ClientStateType, ClientState, LogData, LogInfo } from "./models";
+import { ClientStateType, ClientState, LogData, LogInfo, Credentials } from "./models";
 import { GrahilEvent} from "./event/events";
 import * as CHANNEL_STATES from './event/channelstates'
 
@@ -20,6 +20,8 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
     host: string;
     port: number;
+    autoconnect?: boolean;
+    reconnectOnFailure?: boolean;
 
     private _socketservice!: IServiceSocket;
     private _restEndPoint:string;
@@ -27,15 +29,25 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     private _authtime!: number;
     private _jsonConvert: JsonConvert;
 
+    private _lastCredentials!:Credentials;
+    private _errorCount:number;
+    private static MAX_ERROR_TOLERANCE:number = 5;
+
 
 
 
     constructor (config:IClientConfig) {      
         
         super()
+
+        this._errorCount = 0;
         
         this.host = config.host
         this.port = config.port
+        this.autoconnect = (typeof config.autoconnect === 'undefined' || config.autoconnect === null)?false:config.autoconnect
+        this.reconnectOnFailure = (typeof config.reconnectOnFailure === 'undefined' || config.reconnectOnFailure === null)?false:config.reconnectOnFailure
+
+
         this._restEndPoint = "http" + "://" + this.host + ":" + this.port // fix this later
 
         this._jsonConvert = new JsonConvert();
@@ -399,7 +411,9 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                     })
                     .connect()
                     .then((client)=> {
+                        this._errorCount = 0;
                         this._socketservice = client
+                        this._lastCredentials = new Credentials(username, password);                        
                         this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.CONNECTED))
                         this._socketservice.onChannelData.subscribe((data:any) => {
                             this.processChannelData(data)
@@ -407,8 +421,13 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                         this._socketservice.onChannelState.subscribe((state:string) => {
                             switch(state)
                             {
-                                case CHANNEL_STATES.STATE_CHANNEL_ERROR:
-                                this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.ERROR)) 
+                                case CHANNEL_STATES.STATE_CHANNEL_ERROR:                                
+                                this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.CONNECTION_ERROR)) 
+                                this._errorCount++;
+                                if(this.reconnectOnFailure){
+                                    // try to connect again
+                                    this.attemptReconnect();
+                                }
                                 break;
 
                                 case CHANNEL_STATES.STATE_CHANNEL_DISCONNECTED:
@@ -417,6 +436,10 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
                                 case CHANNEL_STATES.STATE_CHANNEL_CONNECTION_LOST:
                                 this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.CONNECTION_LOST)) 
+                                if(this.reconnectOnFailure){
+                                    // try to connect again                                    
+                                        this.attemptReconnect()
+                                }
                                 break;
 
                                 case CHANNEL_STATES.STATE_CHANNEL_CONNECTIING:
@@ -434,13 +457,39 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
                 }else{
                     console.log(res)
-                    // handle unexpected condition
                 }
             }).catch((err) => {
-                console.log(err);
-                // handle error
+                console.log(err);  
+                this._errorCount++;              
+                const message:string = err.toString()
+                if(message.indexOf("ECONNREFUSED")>0){
+                    if(this.reconnectOnFailure){
+                        this.attemptReconnect()
+                    }
+                }
             })
         });        
+    }
+
+
+
+    private attemptReconnect():void
+    {
+        console.log("Attempting to reconnect")
+
+        if(this._lastCredentials != undefined && this._lastCredentials != null){
+
+            if(this._errorCount<GrahilApiClient.MAX_ERROR_TOLERANCE){
+                
+                setTimeout(() => {
+                    this.connect(this._lastCredentials.username, this._lastCredentials.password);    
+                }, 5000);               
+            }
+            else
+            {
+                throw new Error("too many connection failures")                                        
+            }
+        }
     }
 
 
@@ -454,6 +503,17 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
             this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.EVENT_RECEIVED))
             
             console.log(JSON.stringify(event))    
+
+                    /*
+                case "log_line_generated":
+                    const logdata:string = event.data["log"]
+                    const logname:string = event.data["name"]                    
+                    truedata = new LogData(logname, logdata)
+                    event.data = truedata
+                    this._onLogEvent.dispatch(event)
+                    break;
+                */
+               
             
             switch(event.name)
             {
@@ -486,19 +546,6 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
     private getBaseAPIendPoint():string{
         return this._restEndPoint;
-    }
-
-
-
-    private _initSocketClient(token:string){
-
-        this._socketservice = new WSClient({
-            host: this.host,
-            port: this.port,
-            authtoken:token,
-            autoconnect:true
-        })
-
     }
 
 

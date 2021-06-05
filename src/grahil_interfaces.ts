@@ -109,7 +109,6 @@ export interface ISocketServiceObject {
     host:string,
     port:number
     authtoken:string,
-    autoconnect?:boolean
     queryparams?:string,
     
 }
@@ -166,6 +165,8 @@ export interface IClientConfig {
     host:string,
     port:number
     username?:string,
-    password?:string
+    password?:string,
+    autoconnect?:boolean,
+    reconnectOnFailure?: boolean;
 }
 

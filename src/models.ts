@@ -29,12 +29,12 @@ export class LogData{
 
 
 export enum ClientStateType {
-    CONNECTING = 1,
-    CONNECTED,
-    CONNECTION_LOST,
-    CONNECTION_TERMINATED,
-    ERROR,
-    EVENT_RECEIVED,
+    CONNECTING = "CONNECTING",
+    CONNECTED = "CONNECTED",
+    CONNECTION_LOST = "CONNECTION_LOST",
+    CONNECTION_TERMINATED = "CONNECTION_TERMINATED",
+    CONNECTION_ERROR = "ERROR",
+    EVENT_RECEIVED = "EVENT_RECEIVED",
   }
 
 
@@ -45,5 +45,16 @@ export class ClientState{
     constructor(state:ClientStateType, timestamp?:number){
         this.state = state
         this.timestamp = timestamp
+    }
+}
+
+
+export class Credentials{
+    username: string;
+    password: string;
+
+    constructor(username:string, password:string){
+        this.username = username
+        this.password = password
     }
 }
