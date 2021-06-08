@@ -8,15 +8,15 @@ export const DATA_EVENT = "DataReceived";
 
 export const TOPIC_LOG_ACTIONS = "/log/actions"
 
-export const TOPIC_LOGMONITORING = "/logging"
+export const TOPIC_LOG_MONITORING = "/logging"
 
-export const TOPIC_SYSMONITORING = "/stats"
+export const TOPIC_STATS_MONITORING = "/stats"
 
 export const TOPIC_PING = "/ping"
 
 export const TOPIC_EVENTS = "/events"
 
-export const TOPIC_SCRIPTS = "/script"
+export const TOPIC_SCRIPT_MONITORING = "/script"
 
 
 export class GrahilEvent{
@@ -27,7 +27,7 @@ export class GrahilEvent{
     note!:string
     timestamp!:number
 
-    constructor(name:String){
+    constructor(name:string){
         this.name = name
     }
 

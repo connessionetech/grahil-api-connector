@@ -1,22 +1,22 @@
 // Core api client
 
-const axios = require('axios');
+import 'reflect-metadata';
 import { IServiceClient, IServiceSocket, IClientConfig } from "./grahil_interfaces";
 import { WSClient} from "./wsclient";
 import { sha256, sha224 } from 'js-sha256';
-import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
+import { EventList, IEventHandler } from "strongly-typed-events";
 import { ClientEventProvider } from "./event/eventprovider";
 import { Base64 } from 'js-base64';
-import {JsonConvert, OperationMode, ValueCheckingMode} from "json2typescript"
-import { ClientStateType, ClientState, LogData, LogInfo, Credentials } from "./models";
-import { GrahilEvent} from "./event/events";
+import { ClientStateType, ClientState, TopicData, LogData, LogInfo, Credentials, ScriptData, Stats } from "./models";
+import { GrahilEvent, TOPIC_SCRIPT_MONITORING, TOPIC_LOG_MONITORING, TOPIC_STATS_MONITORING} from "./event/events";
 import * as CHANNEL_STATES from './event/channelstates'
+import { plainToClass } from "class-transformer";
 
-
+const axios = require('axios');
 require('better-logging')(console);
 
 
-export class GrahilApiClient extends ClientEventProvider implements IServiceClient{
+export class GrahilApiClient extends ClientEventProvider implements IServiceClient {
 
     host: string;
     port: number;
@@ -27,11 +27,12 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     private _restEndPoint:string;
     private _authtoken!: string;
     private _authtime!: number;
-    private _jsonConvert: JsonConvert;
 
     private _lastCredentials!:Credentials;
     private _errorCount:number;
     private static MAX_ERROR_TOLERANCE:number = 5;
+
+    private _topicevents = new EventList<IServiceClient, any>();
 
 
 
@@ -50,10 +51,43 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
         this._restEndPoint = "http" + "://" + this.host + ":" + this.port // fix this later
 
-        this._jsonConvert = new JsonConvert();
-        this._jsonConvert.operationMode = OperationMode.LOGGING; // print some debug data
-        this._jsonConvert.ignorePrimitiveChecks = false; // don't allow assigning number to string etc.
-        this._jsonConvert.valueCheckingMode = ValueCheckingMode.DISALLOW_NULL; // never allow null
+        return this
+    }
+    
+
+
+    /**
+     * Subscribes to a specific DataEvent topic
+     * 
+     * @param topicname topic name to subscribe to 
+     * @param fn subscriber handler function 
+     */
+    subscribeTopic(topicname: string, fn: IEventHandler<IServiceClient, any>): void {
+        this._topicevents.get(topicname).subscribe(fn)
+    }
+
+
+
+    /**
+     * Unsubscribes from a specific DataEvent topic. The handler is executed at most once
+     * 
+     * @param topicname topic name to unsubscribe from
+     * @param fn subscriber handler function 
+     */
+    unsubscribeTopic(topicname: string, fn: IEventHandler<IServiceClient, any>): void {
+        this._topicevents.get(topicname).unsubscribe(fn)
+    }
+
+
+
+    /**
+     * Checks to see if a given DataEvent topic has a handler registered against it or not
+     * 
+     * @param topicname 
+     * @param fn 
+     */
+    hasTopicHandler(topicname: string, fn: IEventHandler<IServiceClient, any>): boolean {
+        return this._topicevents.get(topicname).has(fn)
     }
 
 
@@ -156,7 +190,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
      * 
      * @returns Promise that resolved to List of logs
      */
-    public getlogs():Promise<Array<LogInfo>>
+    public get_logs():Promise<Array<LogInfo>>
     {
         return new Promise((resolve,reject) => {
 
@@ -182,7 +216,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
         return new Promise((resolve,reject) => {
 
             let payload = {
-                "topic": "/stats"
+                "topic": TOPIC_STATS_MONITORING
             }
             let promise: Promise<any> = this._socketservice.doRPC("subscribe_channel", payload)
             promise.then((data:any)=>{
@@ -207,7 +241,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
         return new Promise((resolve,reject) => {
 
             let payload = {
-                "topic": "/logging/"+logkey
+                "topic": TOPIC_LOG_MONITORING + "/" +logkey
             }
             let promise: Promise<any> = this._socketservice.doRPC("subscribe_channel", payload)
             promise.then((data:any)=>{
@@ -232,7 +266,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
         return new Promise((resolve,reject) => {
 
             let payload = {
-                "topic": "/logging/"+logkey
+                "topic": TOPIC_LOG_MONITORING + "/" + logkey
             }
             let promise: Promise<any> = this._socketservice.doRPC("unsubscribe_channel", payload)
             promise.then((data:any)=>{
@@ -502,18 +536,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
             let truedata = null;      
             this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.EVENT_RECEIVED))
             
-            console.log(JSON.stringify(event))    
-
-                    /*
-                case "log_line_generated":
-                    const logdata:string = event.data["log"]
-                    const logname:string = event.data["name"]                    
-                    truedata = new LogData(logname, logdata)
-                    event.data = truedata
-                    this._onLogEvent.dispatch(event)
-                    break;
-                */
-               
+            console.log(JSON.stringify(event))               
             
             switch(event.name)
             {
@@ -532,14 +555,45 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
                 
                 case "data_generated":
                     this._onDataEvent.dispatch(event)
+                    this._dispatchTopicOrientedDataEvent(event)
                     break;
 
                 default:
-                    console.debug("Unrecognized event")
+                    console.debug("Unrecognized event type")
                     break
             }
         }
 
+    }
+
+
+
+    private _dispatchTopicOrientedDataEvent(event:GrahilEvent):void
+    {
+        const topic:string = event.topic
+
+        switch(topic)
+        {
+
+            case (topic.startsWith(TOPIC_LOG_MONITORING))?topic:null:
+                const logdata:LogData = plainToClass(LogData, event.data);
+                this._topicevents.get(topic).dispatchAsync(this, logdata)
+                break;
+
+            case (topic.startsWith(TOPIC_SCRIPT_MONITORING))?topic:null:
+                const scriptdata:ScriptData = plainToClass(ScriptData, event.data);
+                this._topicevents.get(topic).dispatchAsync(this, scriptdata)
+                break;
+
+            case (topic.startsWith(TOPIC_STATS_MONITORING))?topic:null:
+                const stats:Stats = plainToClass(Stats, event.data);
+                this._topicevents.get(topic).dispatchAsync(this, stats)
+                break;
+
+            default:
+                console.debug("Event for topic:"+topic)
+                break;
+        }
     }
 
 

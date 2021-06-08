@@ -6,73 +6,103 @@ import { ClientState, LogInfo } from "./models";
 
 export interface OSStats {
     arch: string;
+
     name: string;
+
     type: string;
+
     flavor: string;
+
     version: string;
+
     boot_time: number;
+
     uptime: number;
-    datetime: string;
+
+    system_datetime: string;
+
     timezone: string;
 }
 
 
 export interface CPUStats {
+    
     frequency: string;
+
     count: number;
+
     vendor: string;
+
     model: string;
-    usage_percent: string;
+
+    percent: string;
 }
 
 
 export interface MemoryStats {
+
     total: number;
+
     used: number;
+
     free: number;
-    usage_percent: string;
+
     swap_total: number;
+
     swap_used: number;
+
     swap_free: number;
+
+    percent: string;
 }
 
 
 export interface DiskStats {
-    mountpoint: string,
-    total: string,
-    used: string,
-    free: string,
-    usage_percent: string
+    mountpoint: string;
+
+    fstype:string;
+
+    total: string;
+
+    used: string;
+
+    free: string;
+
+    percent: string;
 }
 
 
 export interface NetworkStats {
-    id: string,
-    bytes_sent: number,
-    bytes_recv: number,
-    packets_sent: number,
-    packets_recv: number,
-    errin: number,
-    errout: number,
-    dropin: number,
-    dropout: number,
+    id: string;
+
+    bytes_sent:number;
+
+    bytes_recv: number;
+
+    packets_sent: number;
+
+    packets_recv: number;
+
+    errin: number;
+
+    errout: number;
+
+    dropin: number;
+    
+    dropout: number;
 }
 
 
 export interface SystemStats {
     os: OSStats,
+
     cpu: CPUStats,
+
     memory: MemoryStats,
+
     disk: DiskStats,
-    network: NetworkStats,
-    timestamp:number
-}
 
-
-export interface LogData {
-    log_key: string,
-    log_data: string,
-    timestamp:number
+    network: NetworkStats
 }
 
 
@@ -125,7 +155,7 @@ export interface IClientChannel {
 
 export interface IServiceClient extends IClientChannel {
     connect: (username:string, password:string)=>Promise<any>
-    getlogs: ()=>Promise<Array<LogInfo>>,
+    get_logs: ()=>Promise<Array<LogInfo>>,
     read_file: (path:string)=>Promise<string>,
     write_file: (path:string, content:any)=>Promise<void>,
     subscribe_log: (logkey:string)=>Promise<string>,
