@@ -149,7 +149,6 @@ export interface IClientChannel {
     onTextDataNotification:ISimpleEvent<any>;
     onServerData:ISimpleEvent<any>;
     onClientStateUpdate:ISimpleEvent<ClientState>;
-    onServerPing:ISimpleEvent<any>;
 }
 
 

@@ -7,10 +7,10 @@ import { sha256, sha224 } from 'js-sha256';
 import { EventList, IEventHandler } from "strongly-typed-events";
 import { ClientEventProvider } from "./event/eventprovider";
 import { Base64 } from 'js-base64';
-import { ClientStateType, ClientState, TopicData, LogData, LogInfo, Credentials, ScriptData, Stats } from "./models";
-import { GrahilEvent, TOPIC_SCRIPT_MONITORING, TOPIC_LOG_MONITORING, TOPIC_STATS_MONITORING} from "./event/events";
+import { GrahilServiceEvent, ClientStateType, ClientState, LogData, LogInfo, Credentials, ScriptData, Stats, SimpleNotificationData, GrahilClientStatsDataEvent, GrahilClientLogDataEvent, GrahilClientSimpleNotificationEvent, GrahilClientErrorEvent } from "./models";
+import { TOPIC_SCRIPT_MONITORING, TOPIC_LOG_MONITORING, TOPIC_STATS_MONITORING, TOPIC_DELEGATE_MONITORING} from "./event/events";
 import * as CHANNEL_STATES from './event/channelstates'
-import { plainToClass } from "class-transformer";
+import * as EVENTS from './event/events'
 
 const axios = require('axios');
 require('better-logging')(console);
@@ -507,6 +507,9 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
 
 
+    /**
+     * Attempts to reconenct back to service using last successful credentials
+     */
     private attemptReconnect():void
     {
         console.log("Attempting to reconnect")
@@ -528,33 +531,43 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
 
 
 
+    /**
+     * Process push data from server and dispatch events for client
+     * 
+     * @param data 
+     */
     private processChannelData(data:any):void{
 
         if(data["type"] == "event")
         {
-            let event:GrahilEvent = data as GrahilEvent   
-            let truedata = null;      
+            let event:GrahilServiceEvent = data as GrahilServiceEvent      
+            let notificationData = undefined;
             this._onClientStateUpdate.dispatch(new ClientState(ClientStateType.EVENT_RECEIVED))
-            
             console.log(JSON.stringify(event))               
             
             switch(event.name)
             {
+                case EVENTS.SERVER_PING_EVENT:
+                    console.debug("Server ping message")
+                    break;
+                
+                case EVENTS.TEXT_NOTIFICATION_EVENT:
+                    this._onTextNotificationEvent.dispatchAsync(new GrahilClientSimpleNotificationEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
+                    break;  
+                
 
-                case "ping_generated":
-                    this._onServerPingEvent.dispatch(event)
+                case EVENTS.TEXT_DATA_NOTIFICATION_EVENT:
+                    console.debug("data notification event")
+                    this._onTextNotificationEvent.dispatchAsync(new GrahilClientSimpleNotificationEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
+                    this._dispatchTopicOrientedDataEvent(event)                    
+                    break
+
+                
+                case EVENTS.ERROR_EVENT:
+                    this._dispatchTopicOrientedErrorEvent(event)
                     break;
                 
-                case "text_notification":
-                    this._onTextNotificationEvent.dispatch(event)
-                    break;
-                
-                case "text_data_notification":
-                    this._onTextDataNotificationEvent.dispatch(event)
-                    break;
-                
-                case "data_generated":
-                    this._onDataEvent.dispatch(event)
+                case EVENTS.DATA_EVENT:
                     this._dispatchTopicOrientedDataEvent(event)
                     break;
 
@@ -567,8 +580,47 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
     }
 
 
+    /**
+     * Dispatches topic specific error event with topic specific data 
+     * @param event 
+     */
+    private _dispatchTopicOrientedErrorEvent(event:GrahilServiceEvent):void
+    {
 
-    private _dispatchTopicOrientedDataEvent(event:GrahilEvent):void
+        const topic:string = event.topic
+
+        switch(topic)
+        {
+            case (topic.startsWith(TOPIC_LOG_MONITORING))?topic:null:
+                this._topicevents.get(topic).dispatchAsync(this, new GrahilClientErrorEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
+                break;
+
+            case (topic.startsWith(TOPIC_SCRIPT_MONITORING))?topic:null:
+                this._topicevents.get(topic).dispatchAsync(this, new GrahilClientErrorEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
+                break;
+
+            case (topic.startsWith(TOPIC_STATS_MONITORING))?topic:null:
+                this._topicevents.get(topic).dispatchAsync(this, new GrahilClientErrorEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
+                break;
+
+            case (topic.startsWith(TOPIC_DELEGATE_MONITORING))?topic:null:
+                this._topicevents.get(topic).dispatchAsync(this, new GrahilClientErrorEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
+                break;    
+
+            default:
+                console.debug("Event for topic:"+topic)
+                break;
+        }
+
+    }
+
+
+
+    /**
+     * Dispatches topic specific event with topic specific data 
+     * @param event 
+     */
+    private _dispatchTopicOrientedDataEvent(event:GrahilServiceEvent):void
     {
         const topic:string = event.topic
 
@@ -576,19 +628,21 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
         {
 
             case (topic.startsWith(TOPIC_LOG_MONITORING))?topic:null:
-                const logdata:LogData = plainToClass(LogData, event.data);
-                this._topicevents.get(topic).dispatchAsync(this, logdata)
+                this._topicevents.get(topic).dispatchAsync(this, new GrahilClientLogDataEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
                 break;
 
             case (topic.startsWith(TOPIC_SCRIPT_MONITORING))?topic:null:
-                const scriptdata:ScriptData = plainToClass(ScriptData, event.data);
-                this._topicevents.get(topic).dispatchAsync(this, scriptdata)
+                this._topicevents.get(topic).dispatchAsync(this, new GrahilClientStatsDataEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
                 break;
 
             case (topic.startsWith(TOPIC_STATS_MONITORING))?topic:null:
-                const stats:Stats = plainToClass(Stats, event.data);
-                this._topicevents.get(topic).dispatchAsync(this, stats)
+                this._topicevents.get(topic).dispatchAsync(this, new GrahilClientStatsDataEvent(event.topic, event.data, event.meta, event.note, event.timestamp))
                 break;
+            
+            case (topic.startsWith(TOPIC_DELEGATE_MONITORING))?topic:null:
+                // Delegate data object to be engineered
+                console.debug("Event for delegate monitoring:"+topic)
+                break; 
 
             default:
                 console.debug("Event for topic:"+topic)
@@ -602,7 +656,7 @@ export class GrahilApiClient extends ClientEventProvider implements IServiceClie
         return this._restEndPoint;
     }
 
-
+    
 
     private authenticate(username:string, password:string):Promise<any>{
 

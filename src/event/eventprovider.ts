@@ -1,5 +1,6 @@
-import { IClientChannel, IServiceChannel} from "../grahil_interfaces";
+import { IClientChannel, IServiceChannel,IServiceClient} from "../grahil_interfaces";
 import { SignalDispatcher, SimpleEventDispatcher, EventDispatcher, ISimpleEvent } from "strongly-typed-events";
+import { GrahilClientDataNotificationEvent, GrahilClientSimpleNotificationEvent, SimpleNotificationData } from "../models";
 
 
 export class ChannelEventProvider implements IServiceChannel {
@@ -27,13 +28,11 @@ export class ChannelEventProvider implements IServiceChannel {
 
 
 export class ClientEventProvider implements IClientChannel {
-
     /* Events */
-    _onTextNotificationEvent = new SimpleEventDispatcher<any>();
-    _onTextDataNotificationEvent = new SimpleEventDispatcher<any>();
+    _onTextNotificationEvent = new SimpleEventDispatcher<GrahilClientSimpleNotificationEvent>();
+    _onTextDataNotificationEvent = new SimpleEventDispatcher<GrahilClientDataNotificationEvent>();
     _onDataEvent = new SimpleEventDispatcher<any>();
     _onClientStateUpdate = new SimpleEventDispatcher<any>();
-    _onServerPingEvent = new SimpleEventDispatcher<any>();
 
 
     constructor () {
@@ -55,10 +54,6 @@ export class ClientEventProvider implements IClientChannel {
 
     public get onClientStateUpdate(){
         return this._onClientStateUpdate.asEvent()
-    }
-
-    public get onServerPing(){
-        return this._onServerPingEvent.asEvent()
     }
 
 }

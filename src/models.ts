@@ -1,5 +1,18 @@
 
-import { Expose, Type } from 'class-transformer';
+import { Expose, plainToClass, Type } from 'class-transformer';
+
+
+
+
+export enum ClientStateType {
+    CONNECTING = "CONNECTING",
+    CONNECTED = "CONNECTED",
+    CONNECTION_LOST = "CONNECTION_LOST",
+    CONNECTION_TERMINATED = "CONNECTION_TERMINATED",
+    CONNECTION_ERROR = "ERROR",
+    EVENT_RECEIVED = "EVENT_RECEIVED",
+}
+
 
 export class OSStats {
 
@@ -127,7 +140,6 @@ export class Stats {
 
 
 
-
 export class LogInfo {
     name?: string;
 
@@ -140,6 +152,12 @@ export class LogInfo {
 }
 
 
+export class ErrorData {
+    message!: string;
+    data!: object;
+}
+
+
 export class LogData {
     name!: string;    
     data!: string;
@@ -149,18 +167,22 @@ export class LogData {
 export class ScriptData {
     name!: string;    
     data!: string;
+    state!:string;
 }
 
 
-
-export enum ClientStateType {
-    CONNECTING = "CONNECTING",
-    CONNECTED = "CONNECTED",
-    CONNECTION_LOST = "CONNECTION_LOST",
-    CONNECTION_TERMINATED = "CONNECTION_TERMINATED",
-    CONNECTION_ERROR = "ERROR",
-    EVENT_RECEIVED = "EVENT_RECEIVED",
+export class SimpleNotificationData {
+    message!: string;
+    code!: number;
 }
+
+
+export class DatatNotificationData {
+    message!: string;
+    code!: number;
+    data!:object
+}
+
 
 
 export class ClientState {
@@ -195,4 +217,114 @@ export class TopicData {
         this.data = (data == undefined || data == null) ? undefined : data
     }
 
+}
+
+
+export class GrahilServiceEvent{
+    name:string    
+    topic!:string    
+    state!:string
+    data!:any
+    meta!: any
+    note!:string
+    timestamp!:number
+
+    constructor(name:string){
+        this.name = name
+    }
+
+}
+
+export enum EventType {
+    NOTIFICATION = "NOTIFICATION",
+    DATA = "DATA",
+    ERROR = "ERROR"
+}
+
+export abstract class GrahilClientEvent{
+    topic!:string
+    data:any
+    meta!: any
+    note!:string
+    timestamp!:number
+
+    public constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+
+        if (topic!==undefined){
+            this.topic = topic
+        }
+
+        if (data!==undefined){
+            this.data = data
+        }
+
+        if (meta!==undefined){
+            this.meta = meta
+        }
+
+        if (note!==undefined){
+            this.note = note
+        }
+        
+        if (timestamp!==undefined || !isNaN(timestamp)){
+            this.timestamp = timestamp
+        }
+    }
+}
+
+
+export abstract class GrahilClientDataEvent extends GrahilClientEvent{
+    type:EventType = EventType.DATA
+    constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+        super(topic, data, meta, note, timestamp)
+    }
+}
+
+export abstract class GrahilClientNotificationEvent extends GrahilClientEvent{
+    type:EventType = EventType.NOTIFICATION
+    constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+        super(topic, data, meta, note, timestamp)
+    }
+}
+
+
+export class GrahilClientErrorEvent extends GrahilClientEvent{
+    type:EventType = EventType.ERROR
+    constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+        super(topic, plainToClass(ErrorData, data), meta, note, timestamp)        
+    }
+}
+
+
+export class GrahilClientSimpleNotificationEvent extends GrahilClientNotificationEvent{
+    constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+        super(topic, plainToClass(SimpleNotificationData, data), meta, note, timestamp)        
+    }    
+}
+
+export class GrahilClientDataNotificationEvent extends GrahilClientNotificationEvent{
+    constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+        super(topic, plainToClass(DatatNotificationData, data), meta, note, timestamp)        
+    }    
+}
+
+export class GrahilClientLogDataEvent extends GrahilClientDataEvent{
+    constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+        super(topic, plainToClass(ScriptData, data), meta, note, timestamp)
+    }  
+}
+
+
+export class GrahilClientScriptDataEvent extends GrahilClientDataEvent{
+    constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+        super(topic, plainToClass(ScriptData, data), meta, note, timestamp)
+    } 
+}
+
+
+export class GrahilClientStatsDataEvent extends GrahilClientDataEvent{
+    constructor(topic:string, data:any, meta:any, note:string, timestamp:number){
+        super(topic, plainToClass(Stats, data), meta, note, timestamp)
+    } 
+    
 }

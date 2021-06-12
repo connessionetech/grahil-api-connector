@@ -9,7 +9,7 @@ import { ClientState, ClientStateType } from './models'
 const client = new GrahilApiClient({        
     host: "localhost",
     port: 8000,
-    reconnectOnFailure: true
+    reconnectOnFailure: false
 });
 
 client.onClientStateUpdate.subscribe((stateObj:ClientState) => {
@@ -47,7 +47,7 @@ client.onClientStateUpdate.subscribe((stateObj:ClientState) => {
 client.connect("administrator", "xyz123").then(()=>{
      
     setTimeout(() => {
-        client.subscribe_log("red5.log").then((data)=>{
+        client.subscribe_stats().then((data)=>{
             console.log("Call success: " + data)
         }).catch((err)=>{
             console.error(err);        
